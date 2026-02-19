@@ -1,4 +1,5 @@
 streamlit
+crawl4ai
 llama-index
 llama-index-llms-gemini
 llama-index-vector-stores-chroma
