@@ -8,7 +8,7 @@ if "playwright_installed" not in st.session_state:
         st.session_state.playwright_installed = True
 
 from llama_index.llms.google_genai import GoogleGenAI
-from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from crawl4ai import AsyncWebCrawler
 from llama_index.core import VectorStoreIndex, Document, StorageContext, load_index_from_storage, Settings
 from llama_index.vector_stores.chroma import ChromaVectorStore
@@ -22,15 +22,16 @@ if "GOOGLE_API_KEY" in st.secrets:
     api_key = st.secrets["GOOGLE_API_KEY"]
     os.environ["GOOGLE_API_KEY"] = api_key 
     
-    # Use the 'models/' prefix for BOTH to satisfy the 2026 SDK
+    # Use Google for the "Chef" (Chatting)
     Settings.llm = GoogleGenAI(
-        model="models/gemini-2.0-flash", 
+        model="models/gemini-1.5-flash", 
         api_key=api_key
     )
 
-    Settings.embed_model = GoogleGenAIEmbedding(
-        model_name="models/embedding-001", # Changed to the ultra-stable version
-        api_key=api_key
+    # Use HuggingFace for the "Cataloguer" (Indexing)
+    # No API key needed for this part!
+    Settings.embed_model = HuggingFaceEmbedding(
+        model_name="BAAI/bge-small-en-v1.5"
     )
 else:
     st.error("Missing GOOGLE_API_KEY in Streamlit Secrets!")
