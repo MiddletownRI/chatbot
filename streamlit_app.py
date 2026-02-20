@@ -1,10 +1,12 @@
 import streamlit as st
 import asyncio
 import os
+
 if "playwright_installed" not in st.session_state:
     with st.spinner("Preparing browser engine..."):
         os.system("playwright install chromium")
         st.session_state.playwright_installed = True
+
 from llama_index.llms.google_genai import GoogleGenAI
 from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 from crawl4ai import AsyncWebCrawler
@@ -20,28 +22,26 @@ if "GOOGLE_API_KEY" in st.secrets:
     api_key = st.secrets["GOOGLE_API_KEY"]
     os.environ["GOOGLE_API_KEY"] = api_key 
     
-    # 1. The "Chef" - Indented to stay inside the 'if'
+    # 1. The "Chef" (Indented 4 spaces)
     Settings.llm = GoogleGenAI(
         model="models/gemini-2.0-flash", 
         api_key=api_key
     )
 
-    # 2. The "Cataloguer"
-        # 2. The "Cataloguer"
-            Settings.embed_model = GoogleGenAIEmbedding(
-                model_name="text-embedding-004", # Removed "models/" prefix
-                api_key=api_key
-            )
+    # 2. The "Cataloguer" (Indented 4 spaces to match the Chef)
+    Settings.embed_model = GoogleGenAIEmbedding(
+        model_name="text-embedding-004", 
+        api_key=api_key
+    )
 else:
     st.error("Missing GOOGLE_API_KEY in Streamlit Secrets!")
     st.stop()
 
 DB_PATH = "./middletown_db"
 
-# --- 2. THE CRAWLER (The "Data Gatherer") ---
+# --- 2. THE CRAWLER ---
 async def crawl_town_site():
     async with AsyncWebCrawler() as crawler:
-        # Start with the main page
         result = await crawler.arun(url="https://www.middletownri.gov")
         if result.success:
             return [Document(text=result.markdown, metadata={"source": "middletownri.gov"})]
@@ -52,13 +52,11 @@ with st.sidebar:
     st.header("Admin")
     if st.button("🚀 Initial Build/Crawl"):
         with st.status("Crawling MiddletownRI.gov...", expanded=True) as status:
-            # FIX: Use a helper to run the async crawler safely
             try:
                 import nest_asyncio
                 nest_asyncio.apply()
                 docs = asyncio.run(crawl_town_site())
             except:
-                # Fallback for some environments
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 docs = loop.run_until_complete(crawl_town_site())
