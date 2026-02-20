@@ -1,7 +1,7 @@
 streamlit
 crawl4ai
 llama-index
-llama-index-llms-gemini
+llama-index-llms-google-genai>=0.4.0
 llama-index-vector-stores-chroma
 chromadb
-openai
+playwright
