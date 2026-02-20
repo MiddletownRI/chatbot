@@ -80,25 +80,37 @@ with st.sidebar:
 
 # --- 5. CHAT LOGIC ---
 if os.path.exists(DB_PATH):
-    db = chromadb.PersistentClient(path=DB_PATH)
-    chroma_collection = db.get_collection("middletown_docs")
-    vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
-    index = load_index_from_storage(StorageContext.from_defaults(vector_store=vector_store))
-    chat_engine = index.as_chat_engine(chat_mode="context")
-    
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-
-    for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]): st.markdown(msg["content"])
-
-    if prompt := st.chat_input("Ask about Middletown..."):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"): st.markdown(prompt)
+    try:
+        # 1. Reconnect to the Chroma database
+        db = chromadb.PersistentClient(path=DB_PATH)
+        chroma_collection = db.get_collection("middletown_docs")
+        vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
         
-        with st.chat_message("assistant"):
-            response = chat_engine.chat(prompt)
-            st.markdown(response.response)
-            st.session_state.messages.append({"role": "assistant", "content": response.response})
+        # 2. Rebuild the storage context
+        storage_context = StorageContext.from_defaults(vector_store=vector_store, persist_dir=DB_PATH)
+        
+        # 3. Load the index (The safety check happens here)
+        index = load_index_from_storage(storage_context)
+        chat_engine = index.as_chat_engine(chat_mode="context")
+        
+        # --- Standard Streamlit Chat UI ---
+        if "messages" not in st.session_state:
+            st.session_state.messages = []
+
+        for msg in st.session_state.messages:
+            with st.chat_message(msg["role"]): st.markdown(msg["content"])
+
+        if prompt := st.chat_input("Ask about Middletown..."):
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"): st.markdown(prompt)
+            
+            with st.chat_message("assistant"):
+                response = chat_engine.chat(prompt)
+                st.markdown(response.response)
+                st.session_state.messages.append({"role": "assistant", "content": response.response})
+                
+    except Exception as e:
+        # If the files are missing or the DB is corrupted, show the info message instead of crashing
+        st.info("👈 Data is not yet fully indexed. Please click 'Initial Build' in the sidebar.")
 else:
     st.info("👈 Please click the 'Initial Build' button in the sidebar to load the town data.")
