@@ -1,7 +1,13 @@
+# --- 0. CRITICAL DATABASE FIX (MUST BE FIRST) ---
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+
 import streamlit as st
 import asyncio
 import os
 
+# --- 1. HANDLE BROWSER INSTALLATION ---
 if "playwright_installed" not in st.session_state:
     with st.spinner("Preparing browser engine..."):
         os.system("playwright install chromium")
@@ -14,7 +20,7 @@ from llama_index.core import VectorStoreIndex, Document, StorageContext, load_in
 from llama_index.vector_stores.chroma import ChromaVectorStore
 import chromadb
 
-# --- 1. CONFIGURATION ---
+# --- 2. CONFIGURATION ---
 st.set_page_config(page_title="Middletown RI AI", page_icon="🏛️")
 st.title("🏛️ Middletown, RI AI Assistant")
 
@@ -22,14 +28,13 @@ if "GOOGLE_API_KEY" in st.secrets:
     api_key = st.secrets["GOOGLE_API_KEY"]
     os.environ["GOOGLE_API_KEY"] = api_key 
     
-    # Use Google for the "Chef" (Chatting)
+    # The "Chef" (Gemini 2.0 Flash is state-of-the-art for 2026)
     Settings.llm = GoogleGenAI(
-        model="models/gemini-1.5-flash", 
+        model="models/gemini-2.0-flash", 
         api_key=api_key
     )
 
-    # Use HuggingFace for the "Cataloguer" (Indexing)
-    # No API key needed for this part!
+    # The "Cataloguer" (HuggingFace avoids the Google ClientError)
     Settings.embed_model = HuggingFaceEmbedding(
         model_name="BAAI/bge-small-en-v1.5"
     )
@@ -39,7 +44,7 @@ else:
 
 DB_PATH = "./middletown_db"
 
-# --- 2. THE CRAWLER ---
+# --- 3. THE CRAWLER ---
 async def crawl_town_site():
     async with AsyncWebCrawler() as crawler:
         result = await crawler.arun(url="https://www.middletownri.gov")
@@ -47,7 +52,7 @@ async def crawl_town_site():
             return [Document(text=result.markdown, metadata={"source": "middletownri.gov"})]
         return []
         
-# --- 3. SIDEBAR CONTROLS ---
+# --- 4. SIDEBAR & BUILD LOGIC ---
 with st.sidebar:
     st.header("Admin")
     if st.button("🚀 Initial Build/Crawl"):
@@ -68,11 +73,12 @@ with st.sidebar:
             vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
             storage_context = StorageContext.from_defaults(vector_store=vector_store)
             
+            # Builds index from crawled documents
             index = VectorStoreIndex.from_documents(docs, storage_context=storage_context)
             status.update(label="Build Complete!", state="complete")
             st.rerun()
 
-# --- 4. CHAT LOGIC ---
+# --- 5. CHAT LOGIC ---
 if os.path.exists(DB_PATH):
     db = chromadb.PersistentClient(path=DB_PATH)
     chroma_collection = db.get_collection("middletown_docs")
