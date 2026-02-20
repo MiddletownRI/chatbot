@@ -18,20 +18,19 @@ st.title("🏛️ Middletown, RI AI Assistant")
 
 if "GOOGLE_API_KEY" in st.secrets:
     api_key = st.secrets["GOOGLE_API_KEY"]
-    os.environ["GOOGLE_API_KEY"] = api_key # Keeps other tools happy
+    os.environ["GOOGLE_API_KEY"] = api_key 
     
-# 1. The "Chef"
-# Using the 2.0 or 1.5 stable models is often safer if 3.0-preview is finicky
-Settings.llm = GoogleGenAI(
-    model="models/gemini-2.0-flash", 
-    api_key=api_key
-)
+    # 1. The "Chef" - Indented to stay inside the 'if'
+    Settings.llm = GoogleGenAI(
+        model="models/gemini-2.0-flash", 
+        api_key=api_key
+    )
 
-# 2. The "Cataloguer"
-Settings.embed_model = GoogleGenAIEmbedding(
-    model_name="models/text-embedding-004", 
-    api_key=api_key
-)
+    # 2. The "Cataloguer" - Indented to stay inside the 'if'
+    Settings.embed_model = GoogleGenAIEmbedding(
+        model_name="models/text-embedding-004", 
+        api_key=api_key
+    )
 else:
     st.error("Missing GOOGLE_API_KEY in Streamlit Secrets!")
     st.stop()
