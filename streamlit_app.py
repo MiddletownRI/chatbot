@@ -9,7 +9,6 @@ from llama_index.llms.google_genai import GoogleGenAI
 from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 from crawl4ai import AsyncWebCrawler
 from llama_index.core import VectorStoreIndex, Document, StorageContext, load_index_from_storage, Settings
-from llama_index.llms.google_genai import GoogleGenAI
 from llama_index.vector_stores.chroma import ChromaVectorStore
 import chromadb
 
@@ -21,17 +20,18 @@ if "GOOGLE_API_KEY" in st.secrets:
     api_key = st.secrets["GOOGLE_API_KEY"]
     os.environ["GOOGLE_API_KEY"] = api_key # Keeps other tools happy
     
-    # 1. The "Chef" (Generates responses)
-    Settings.llm = GoogleGenAI(
-        model="models/gemini-3-flash", 
-        api_key=api_key
-    )
-    
-    # 2. The "Cataloguer" (Turns website text into searchable data)
-    Settings.embed_model = GoogleGenAIEmbedding(
-        model_name="models/text-embedding-004", 
-        api_key=api_key
-    )
+# 1. The "Chef"
+# Using the 2.0 or 1.5 stable models is often safer if 3.0-preview is finicky
+Settings.llm = GoogleGenAI(
+    model="models/gemini-2.0-flash", 
+    api_key=api_key
+)
+
+# 2. The "Cataloguer"
+Settings.embed_model = GoogleGenAIEmbedding(
+    model_name="models/text-embedding-004", 
+    api_key=api_key
+)
 else:
     st.error("Missing GOOGLE_API_KEY in Streamlit Secrets!")
     st.stop()
