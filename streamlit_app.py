@@ -13,7 +13,7 @@ st.title("🏛️ Middletown, RI AI Assistant")
 
 if "GOOGLE_API_KEY" in st.secrets:
     os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
-    Settings.llm = GoogleGenAI(model="models/gemini-3-flash")
+    Settings.llm = GoogleGenAI(model="models/gemini-3-flash-preview")
 else:
     st.error("Missing GOOGLE_API_KEY in Streamlit Secrets!")
     st.stop()
