@@ -1,6 +1,10 @@
 import streamlit as st
 import asyncio
 import os
+if "playwright_installed" not in st.session_state:
+    with st.spinner("Preparing browser engine..."):
+        os.system("playwright install chromium")
+        st.session_state.playwright_installed = True
 from llama_index.llms.google_genai import GoogleGenAI
 from crawl4ai import AsyncWebCrawler
 from llama_index.core import VectorStoreIndex, Document, StorageContext, load_index_from_storage, Settings
