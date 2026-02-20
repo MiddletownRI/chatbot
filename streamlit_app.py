@@ -12,11 +12,11 @@ from crawl4ai import AsyncWebCrawler
 from llama_index.core import VectorStoreIndex, Document, StorageContext, load_index_from_storage, Settings
 from llama_index.vector_stores.chroma import ChromaVectorStore
 
-# 1. SETUP
+# 1. GLOBAL SETTINGS
 st.set_page_config(page_title="Middletown RI AI", page_icon="🏛️")
 st.title("🏛️ Middletown, RI AI Assistant")
 
-DB_PATH = os.path.join(os.getcwd(), "middletown_db")
+DB_PATH = "./middletown_db"
 
 if "GOOGLE_API_KEY" in st.secrets:
     api_key = st.secrets["GOOGLE_API_KEY"]
@@ -26,26 +26,26 @@ else:
     st.error("Missing GOOGLE_API_KEY in Secrets!")
     st.stop()
 
-# 2. HELPER TO GET INDEX
-def get_index():
+# 2. CACHED LOADING (This prevents the loop)
+@st.cache_resource(show_spinner="Connecting to Knowledge Base...")
+def load_cached_index():
     if not os.path.exists(DB_PATH) or not os.listdir(DB_PATH):
         return None
     try:
         db = chromadb.PersistentClient(path=DB_PATH)
         chroma_collection = db.get_collection("middletown_docs")
         vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
-        # Rebuild storage context from the specific directory
         storage_context = StorageContext.from_defaults(vector_store=vector_store, persist_dir=DB_PATH)
         return load_index_from_storage(storage_context)
     except Exception:
         return None
 
-# 3. SIDEBAR BUILDER
+# 3. SIDEBAR (The Builder)
 with st.sidebar:
     st.header("Admin")
     if st.button("🚀 Initial Build/Crawl"):
-        with st.status("Building Knowledge Base...", expanded=True) as status:
-            # Crawling
+        with st.status("Building...", expanded=True) as status:
+            # Crawl
             import nest_asyncio
             nest_asyncio.apply()
             async def do_crawl():
@@ -54,24 +54,27 @@ with st.sidebar:
                     return [Document(text=res.markdown)] if res.success else []
             docs = asyncio.run(do_crawl())
             
-            # Indexing
+            # Index & Persist
             db = chromadb.PersistentClient(path=DB_PATH)
             chroma_collection = db.get_or_create_collection("middletown_docs")
             vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
             storage_context = StorageContext.from_defaults(vector_store=vector_store)
-            
             index = VectorStoreIndex.from_documents(docs, storage_context=storage_context)
-            # CRITICAL: Persist metadata to the SAME directory
             index.storage_context.persist(persist_dir=DB_PATH)
             
+            # Clear cache so the app 'sees' the new data
+            st.cache_resource.clear()
             status.update(label="Build Complete!", state="complete")
             st.rerun()
 
-# 4. MAIN CHAT INTERFACE
-index = get_index()
+# 4. CHAT INTERFACE
+index = load_cached_index()
 
 if index:
-    chat_engine = index.as_chat_engine(chat_mode="context")
+    # Initialize chat engine once in session state
+    if "chat_engine" not in st.session_state:
+        st.session_state.chat_engine = index.as_chat_engine(chat_mode="context")
+    
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -81,7 +84,10 @@ if index:
     if prompt := st.chat_input("Ask about Middletown..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"): st.markdown(prompt)
-        response = chat_engine.chat(prompt)
+        
+        # Use session_state engine to keep conversation history
+        response = st.session_state.chat_engine.chat(prompt)
+        
         with st.chat_message("assistant"):
             st.markdown(response.response)
         st.session_state.messages.append({"role": "assistant", "content": response.response})
