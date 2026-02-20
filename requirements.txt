@@ -1,9 +1,9 @@
 streamlit
-crawl4ai
 llama-index
 llama-index-llms-google-genai
-llama-index-embeddings-google-genai
+llama-index-embeddings-huggingface
 llama-index-vector-stores-chroma
+crawl4ai
 chromadb
-playwright
-nest_asyncio
+pysqlite3-binary
+nest-asyncio
