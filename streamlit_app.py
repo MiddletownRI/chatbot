@@ -75,6 +75,7 @@ with st.sidebar:
             
             # Builds index from crawled documents
             index = VectorStoreIndex.from_documents(docs, storage_context=storage_context)
+            index.storage_context.persist(persist_dir=DB_PATH)
             status.update(label="Build Complete!", state="complete")
             st.rerun()
 
