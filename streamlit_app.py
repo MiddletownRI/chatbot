@@ -30,7 +30,7 @@ if "GOOGLE_API_KEY" in st.secrets:
 
     # 2. The "Cataloguer" (Indented 4 spaces to match the Chef)
     Settings.embed_model = GoogleGenAIEmbedding(
-        model_name="text-embedding-004", 
+        model_name="text-embedding-001", 
         api_key=api_key
     )
 else:
