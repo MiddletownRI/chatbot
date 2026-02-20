@@ -26,11 +26,12 @@ if "GOOGLE_API_KEY" in st.secrets:
         api_key=api_key
     )
 
-    # 2. The "Cataloguer" - Indented to stay inside the 'if'
-    Settings.embed_model = GoogleGenAIEmbedding(
-        model_name="models/text-embedding-004", 
-        api_key=api_key
-    )
+    # 2. The "Cataloguer"
+        # 2. The "Cataloguer"
+            Settings.embed_model = GoogleGenAIEmbedding(
+                model_name="text-embedding-004", # Removed "models/" prefix
+                api_key=api_key
+            )
 else:
     st.error("Missing GOOGLE_API_KEY in Streamlit Secrets!")
     st.stop()
@@ -45,8 +46,7 @@ async def crawl_town_site():
         if result.success:
             return [Document(text=result.markdown, metadata={"source": "middletownri.gov"})]
         return []
-
-# --- 3. SIDEBAR CONTROLS ---
+        
 # --- 3. SIDEBAR CONTROLS ---
 with st.sidebar:
     st.header("Admin")
