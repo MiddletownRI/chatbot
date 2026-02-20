@@ -48,11 +48,22 @@ async def crawl_town_site():
         return []
 
 # --- 3. SIDEBAR CONTROLS ---
+# --- 3. SIDEBAR CONTROLS ---
 with st.sidebar:
     st.header("Admin")
     if st.button("🚀 Initial Build/Crawl"):
         with st.status("Crawling MiddletownRI.gov...", expanded=True) as status:
-            docs = asyncio.run(crawl_town_site())
+            # FIX: Use a helper to run the async crawler safely
+            try:
+                import nest_asyncio
+                nest_asyncio.apply()
+                docs = asyncio.run(crawl_town_site())
+            except:
+                # Fallback for some environments
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                docs = loop.run_until_complete(crawl_town_site())
+
             status.write("Creating vector database...")
             
             db = chromadb.PersistentClient(path=DB_PATH)
