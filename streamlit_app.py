@@ -3,7 +3,7 @@ import asyncio
 import os
 from crawl4ai import AsyncWebCrawler
 from llama_index.core import VectorStoreIndex, Document, StorageContext, load_index_from_storage, Settings
-from llama_index.llms.gemini import Gemini
+from llama_index.llms.google_genai import GoogleGenAI
 from llama_index.vector_stores.chroma import ChromaVectorStore
 import chromadb
 
@@ -13,7 +13,7 @@ st.title("🏛️ Middletown, RI AI Assistant")
 
 if "GOOGLE_API_KEY" in st.secrets:
     os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
-    Settings.llm = Gemini(model="models/gemini-3-flash")
+    Settings.llm = GoogleGenAI(model="models/gemini-3-flash")
 else:
     st.error("Missing GOOGLE_API_KEY in Streamlit Secrets!")
     st.stop()
