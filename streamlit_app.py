@@ -22,15 +22,14 @@ if "GOOGLE_API_KEY" in st.secrets:
     api_key = st.secrets["GOOGLE_API_KEY"]
     os.environ["GOOGLE_API_KEY"] = api_key 
     
-    # 1. The "Chef" (Indented 4 spaces)
+    # Use the 'models/' prefix for BOTH to satisfy the 2026 SDK
     Settings.llm = GoogleGenAI(
         model="models/gemini-2.0-flash", 
         api_key=api_key
     )
 
-    # 2. The "Cataloguer" (Indented 4 spaces to match the Chef)
     Settings.embed_model = GoogleGenAIEmbedding(
-        model_name="text-embedding-001", 
+        model_name="models/embedding-001", # Changed to the ultra-stable version
         api_key=api_key
     )
 else:
